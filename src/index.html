@@ -1,0 +1,71 @@
+<!-- index.html -->
+<html>
+  <head>
+    <title>List of Activities</title>
+    <script src="https://fb.me/react-0.13.1.js"></script>
+    <script src="https://fb.me/JSXTransformer-0.13.1.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/jsx">
+      // code here
+
+      var Activity = React.createClass({
+        render: function() {
+          return(
+            <li>{this.props.data.name}</li>
+          );
+        }
+      });
+
+      var ActivityList = React.createClass({
+        render: function() {
+
+          var nodes = this.props.data.map(function(activity) {
+            return(
+              <Activity data={activity}/>
+            );
+          });
+
+          return(
+            <ul>
+              {nodes}
+            </ul>
+          );
+        }
+      });
+
+      var ActivityScreen = React.createClass({
+        loadFromServer: function() {
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            success: function(data) {
+              this.setState({data: data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+        },
+        componentDidMount: function() {
+          this.loadFromServer();
+        },
+        getInitialState: function() {
+          return({data : []});
+        },
+        render: function() {
+          return(
+            <ActivityList data={this.state.data}/>
+          );
+        }
+      });
+
+      React.render(
+        <ActivityScreen url="activities.json"/>,
+        document.getElementById('content')
+      );
+    </script>
+  </body>
+</html>
