@@ -57,14 +57,16 @@
         },
         render: function() {
           return(
+            <body>
             <ActivityList data={this.state.data}/>
+            </body>
           );
         }
       });
 
       React.render(
         <ActivityScreen url="activities.json"/>,
-        document.getElementById('content')
+        document.body
       );
     </script>
   </body>
