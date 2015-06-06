@@ -2,13 +2,15 @@
 <html>
   <head>
     <title>List of Activities</title>
-    <script src="https://fb.me/react-0.13.1.js"></script>
-    <script src="https://fb.me/JSXTransformer-0.13.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react-with-addons.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
     <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/2.5.2/rx.all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs-dom/2.0.7/rx.dom.js"></script>
   </head>
   <body>
-    <div id="content"></div>
     <script type="text/jsx">
+
       // code here
 
       var Activity = React.createClass({
@@ -50,10 +52,72 @@
           });
         },
         componentDidMount: function() {
-          this.loadFromServer();
+          // this.loadFromServer();
+          // setInterval(this.loadFromServer, this.props.pollInterval);
+
+          var eventUrlStream =
+          // Rx.Observable.fromPromis(fetch(this.props.url)).select(function(request){
+          //   return request.json();
+          // })
+            Rx.DOM.Request.getJSON(this.props.url)
+            .selectMany(function(data) {
+                console.log('stream loaded data:' + data);
+                return Rx.Observable.fromArray(data);
+            })
+            ;
+
+          var eventStream =
+          eventUrlStream
+          .selectMany(function(eventUrl) {
+            console.log('loading event from url:' + eventUrl);
+            return Rx.DOM.Request.getJSON(eventUrl);
+          })
+          .select(function(data) {
+            console.log('loaded event:' + data);
+            return data;
+          })
+          ;
+
+
+          var setState = this.setState.bind(this);  //it is not autobound by react
+          var jsonFetchObservable = function(url) {
+            return Rx.Observable.fromPromis(fetch(url)).select(function(request){
+              return request.json();
+            });
+          }
+
+          eventStream
+          .scan(this.state, function(state, eventData) {
+              console.log('got event:' + eventData.eventType);
+              //do hardcoding now
+              if (eventData.eventType === 'ActivityAdded')
+                  return {
+                    data: React.addons.update(state.data, {
+                    $push: [{
+                      name: eventData.activityName
+                    }]
+                  })
+                  };
+                return state;
+          })
+          //.observeOn(Rx.Scheduler.requestAnimationFrame)  //seems like react works without forcing "update in UI thread"
+          .subscribe(
+              function (newState) {
+                  console.log('got state update:' + newState.data);
+                  // just update state
+                  setState( newState );
+              },
+              function (error) {
+                  // Log the error
+                  console.error('got error');
+              }
+          );
+
         },
         getInitialState: function() {
-          return({data : []});
+          return({
+            data : []
+          });
         },
         render: function() {
           return(
@@ -65,7 +129,7 @@
       });
 
       React.render(
-        <ActivityScreen url="activities.json"/>,
+        <ActivityScreen url="events.json" pollInterval={2000}/>,
         document.body
       );
     </script>

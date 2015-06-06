@@ -1,11 +1,13 @@
 {
-  "name": "react-tutorial",
+  "name": "attendance-web-react",
   "version": "0.0.0",
   "description": "Code from the React tutorial.",
   "main": "server.js",
   "dependencies": {
     "body-parser": "^1.4.3",
-    "express": "^4.4.5"
+    "express": "^4.4.5",
+    "rx": "^2.5.2",
+    "whatwg-fetch": "^0.9.0"
   },
   "devDependencies": {},
   "scripts": {
@@ -14,20 +16,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/reactjs/react-tutorial.git"
+    "url": "https://github.com/AndreyNikiforov/attendance-web-react.git"
   },
   "keywords": [
     "react",
-    "tutorial",
-    "comment",
     "example"
   ],
-  "author": "petehunt",
+  "author": "AndreyNikiforov",
   "bugs": {
-    "url": "https://github.com/reactjs/react-tutorial/issues"
+    "url": "https://github.com/AndreyNikiforov/attendance-web-react/issues"
   },
-  "homepage": "https://github.com/reactjs/react-tutorial",
-  "engines" : {
-    "node" : "0.12.x"
+  "homepage": "https://github.com/AndreyNikiforov/attendance-web-react",
+  "engines": {
+    "node": "0.12.x"
   }
 }
