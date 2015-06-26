@@ -1,4 +1,5 @@
 [
-  {"name": "Soccer", "text": "This is one comment"},
-  {"name": "Cooking", "text": "This is *another* comment"}
+  "activity1.json",
+  "activity2.json",
+  "activity3.json"
 ]

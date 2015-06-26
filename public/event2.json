@@ -1,6 +1,6 @@
 {
-  "id": "Soccer123",
+  "id": "List123",
   "version": 2,
   "eventType": "ActivityAdded",
-  "activityName": "Soccer"
+  "activityId": "Soccer123"
 }

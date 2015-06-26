@@ -11,12 +11,37 @@
   <body>
     <script type="text/jsx">
 
+//array find() polyfill from moz site
+if (!Array.prototype.find) {
+  Array.prototype.find = function(predicate) {
+    if (this == null) {
+      throw new TypeError('Array.prototype.find called on null or undefined');
+    }
+    if (typeof predicate !== 'function') {
+      throw new TypeError('predicate must be a function');
+    }
+    var list = Object(this);
+    var length = list.length >>> 0;
+    var thisArg = arguments[1];
+    var value;
+
+    for (var i = 0; i < length; i++) {
+      value = list[i];
+      if (predicate.call(thisArg, value, i, list)) {
+        return value;
+      }
+    }
+    return undefined;
+  };
+}
+
+
       // code here
 
       var Activity = React.createClass({
         render: function() {
           return(
-            <li>{this.props.data.name}</li>
+            <li>{this.props.activity.id} - {this.props.activity.name}</li>
           );
         }
       });
@@ -24,9 +49,17 @@
       var ActivityList = React.createClass({
         render: function() {
 
-          var nodes = this.props.data.map(function(activity) {
+          var activities = this.props.activities;
+          var nodes = this.props.activityList.map(function(activityListItem) {
+            var activity = activities.find(function(x) {
+              return x.id === activityListItem.id;
+            });
+            var activityView = {
+              id: activityListItem.id,
+              name: (activity == 'undefined' ? 'loading...' : activity.name)
+            };
             return(
-              <Activity data={activity}/>
+              <Activity activity={activity}/>
             );
           });
 
@@ -39,21 +72,7 @@
       });
 
       var ActivityScreen = React.createClass({
-        loadFromServer: function() {
-          $.ajax({
-            url: this.props.url,
-            dataType: 'json',
-            success: function(data) {
-              this.setState({data: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-              console.error(this.props.url, status, err.toString());
-            }.bind(this)
-          });
-        },
         componentDidMount: function() {
-          // this.loadFromServer();
-          // setInterval(this.loadFromServer, this.props.pollInterval);
 
           var eventUrlStream =
           // Rx.Observable.fromPromis(fetch(this.props.url)).select(function(request){
@@ -86,24 +105,54 @@
             });
           }
 
-          eventStream
+          var activitiesStream =
+            Rx.DOM.Request.getJSON('activities.json')
+              .selectMany(function(data) {
+                  console.log('stream loaded data for activities :' + data);
+                  return Rx.Observable.fromArray(data);
+              })
+              .selectMany(function(eventUrl) {
+                console.log('loading activity event from url:' + eventUrl);
+                return Rx.DOM.Request.getJSON(eventUrl);
+              });
+
+
+              var stateChangeStream =
+              activitiesStream
+              .merge(eventStream)
           .scan(this.state, function(state, eventData) {
               console.log('got event:' + eventData.eventType);
               //do hardcoding now
-              if (eventData.eventType === 'ActivityAdded')
-                  return {
-                    data: React.addons.update(state.data, {
-                    $push: [{
-                      name: eventData.activityName
-                    }]
-                  })
-                  };
-                return state;
-          })
-          //.observeOn(Rx.Scheduler.requestAnimationFrame)  //seems like react works without forcing "update in UI thread"
+              if (eventData.eventType === 'ActivityAdded') {
+                console.log(' added activity ' + eventData.activityId);
+                  return React.addons.update(state, {
+                    activityList: {
+                      $push: [{
+                        id: eventData.activityId,
+                      }]
+                    }
+                  });
+                }
+                  else if (eventData.eventType === 'ActivityCreated') {
+                    console.log(' created activity ' + eventData.id);
+                      return React.addons.update(state, {
+                        activities: {
+                          $push: [{
+                            id: eventData.id,
+                            name: eventData.activityName
+                          }]
+                        }
+                      });
+                    }
+                else
+                  return state;
+          });
+
+          stateChangeStream
+          //.observeOn(Rx.Scheduler.requestAnimationFrame)  //seems like react works without forcing "update in UI thread", but it is needed for debugger; it is much slower too
           .subscribe(
               function (newState) {
-                  console.log('got state update:' + newState.data);
+                  console.log('got state update:' + newState.activityList);
                   // just update state
                   setState( newState );
               },
@@ -116,13 +165,15 @@
         },
         getInitialState: function() {
           return({
-            data : []
+            activityList : [],
+            activities : []
           });
         },
         render: function() {
           return(
             <body>
-            <ActivityList data={this.state.data}/>
+            <button type="button" name="button"></button>
+            <ActivityList activityList={this.state.activityList} activities={this.state.activities}/>
             </body>
           );
         }
